@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="my" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thumbnail Studio Pro - မြန်မာ Thumbnail ဖန်တီးမှုနှင့် AI စတူဒီယို</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Google Fonts: Myanmar Unicode (Noto Sans Myanmar, Padauk) & Display Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800;900&family=Noto+Sans+Myanmar:wght@400;500;600;700;800;900&family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+<!-- Font Awesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script>
+tailwind.config = {
+darkMode: 'class',
+theme: {
+extend: {
+fontFamily: {
+sans: ['Inter', 'Noto Sans Myanmar', 'Padauk', 'sans-serif'],
+myanmar: ['Noto Sans Myanmar', 'Padauk', 'sans-serif'],
+},
+colors: {
+studio: {
+950: '#090b10',
+900: '#11141d',
+800: '#1a1f2e',
+700: '#262d42',
+accent: '#6366f1',
+pink: '#ec4899'
+}
+}
+}
+}
+}
+</script>
+
+<style>
+body {
+font-family: 'Inter', 'Noto Sans Myanmar', 'Padauk', sans-serif;
+background-color: #090b10;
+color: #f3f4f6;
+overflow-x: hidden;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+width: 6px;
+height: 6px;
+}
+::-webkit-scrollbar-track {
+background: #11141d;
+}
+::-webkit-scrollbar-thumb {
+background: #2e364f;
+border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+background: #4f46e5;
+}
+
+/* Checkerboard pattern for transparent canvas workspace */
+.canvas-checkerboard {
+background-color: #161923;
+background-image:
+linear-gradient(45deg, #1f2433 25%, transparent 25%),
+linear-gradient(-45deg, #1f2433 25%, transparent 25%),
+linear-gradient(45deg, transparent 75%, #1f2433 75%),
+linear-gradient(-45deg, transparent 75%, #1f2433 75%);
+background-size: 20px 20px;
+background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Range Slider Styling */
+input[type="range"] {
+-webkit-appearance: none;
+appearance: none;
+background: #262d42;
+height: 6px;
+border-radius: 999px;
+outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+-webkit-appearance: none;
+appearance: none;
+width: 16px;
+height: 16px;
+border-radius: 50%;
+background: #6366f1;
+cursor: pointer;
+border: 2px solid #ffffff;
+box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+transition: transform 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+transform: scale(1.15);
+background: #818cf8;
+}
+
+#thumbnailCanvas {
+box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
+touch-action: none;
+user-select: none;
+}
+</style>
+</head>
+<body class="min-h-screen flex flex-col bg-studio-950 text-gray-100 selection:bg-indigo-500 selection:text-white">
+
+<!-- Toast Notification Container -->
+<div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+<!-- Top Navigation Bar -->
+<header class="h-16 bg-studio-900/95 backdrop-blur-md border-b border-gray-800/80 px-4 lg:px-6 flex items-center justify-between sticky top-0 z-40">
+<!-- Brand Logo -->
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+<i class="fa-solid fa-wand-magic-sparkles text-white text-lg"></i>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h1 class="font-bold text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-indigo-200 to-pink-200 bg-clip-text text-transparent">
+Thumbnail Studio Pro
+</h1>
+<span class="hidden sm:inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full">AI Powered</span>
+</div>
+<p class="text-xs text-gray-400 hidden sm:block">မြန်မာ Thumbnail ဖန်တီးမှုနှင့် AI ဒီဇိုင်းစတူဒီယို</p>
+</div>
+</div>
+
+<!-- Aspect Ratio Quick Selector -->
+<div class="flex items-center bg-studio-800 p-1 rounded-xl border border-gray-700/60">
+<button onclick="setAspectRatio('16:9')" id="ratioBtn-16:9" class="ratio-btn flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all bg-indigo-600 text-white shadow">
+<i class="fa-brands fa-youtube text-red-400"></i>
+<span>16:9</span>
+<span class="hidden md:inline text-[10px] opacity-80">(YouTube)</span>
+</button>
+<button onclick="setAspectRatio('9:16')" id="ratioBtn-9:16" class="ratio-btn flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white transition-all">
+<i class="fa-brands fa-tiktok text-pink-400"></i>
+<span>9:16</span>
+<span class="hidden md:inline text-[10px] opacity-80">(Shorts/TikTok)</span>
+</button>
+<button onclick="setAspectRatio('1:1')" id="ratioBtn-1:1" class="ratio-btn flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white transition-all">
+<i class="fa-brands fa-facebook text-blue-400"></i>
+<span>1:1</span>
+<span class="hidden md:inline text-[10px] opacity-80">(FB Square)</span>
+</button>
+</div>
+
+<!-- Export / Download Action Buttons -->
+<div class="flex items-center gap-2">
+<button onclick="resetProject()" title="အသစ်ပြန်စမည် (Reset)" class="p-2.5 rounded-xl bg-studio-800 hover:bg-studio-700 text-gray-300 hover:text-white border border-gray-700/60 transition text-xs flex items-center gap-1.5">
+<i class="fa-solid fa-rotate-left"></i>
+<span class="hidden xl:inline">အသစ်ပြန်စရန်</span>
+</button>
+<div class="relative group">
+<button onclick="downloadThumbnail('png')" class="px-3.5 sm:px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition transform active:scale-95">
+<i class="fa-solid fa-download"></i>
+<span>ပုံထုတ်ယူရန် (Download)</span>
+</button>
+<!-- Format Dropdown on Hover -->
+<div class="absolute right-0 mt-1 w-48 bg-studio-800 border border-gray-700 rounded-xl shadow-2xl py-1.5 hidden group-hover:block z-50">
+<button onclick="downloadThumbnail('png')" class="w-full px-4 py-2 text-left text-xs hover:bg-indigo-600/30 flex items-center justify-between">
+<span>PNG (အကြည်လင်ဆုံး HD)</span>
+<span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">Best</span>
+</button>
+<button onclick="downloadThumbnail('jpeg')" class="w-full px-4 py-2 text-left text-xs hover:bg-indigo-600/30 flex items-center justify-between">
+<span>JPG (ဖိုင်ဆိုဒ်သေး < 2MB)</span>
+<span class="text-[10px] text-gray-400">Fast</span>
+</button>
+</div>
+</div>
+</div>
+</header>
+
+<!-- Main Studio Workspace -->
+<main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+
+<!-- LEFT PANEL: Tools & Asset Creation Tabs -->
+<aside class="w-full lg:w-[410px] xl:w-[440px] bg-studio-900 border-b lg:border-b-0 lg:border-r border-gray-800/80 flex flex-col lg:h-[calc(100vh-4rem)]">
+
+<!-- Tool Navigation Tabs -->
+<div class="grid grid-cols-5 gap-1 p-2 bg-studio-950/60 border-b border-gray-800">
+<button onclick="switchTab('bg')" id="tabBtn-bg" class="tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all bg-indigo-600 text-white shadow">
+<i class="fa-solid fa-image text-sm mb-1"></i>
+<span>နောက်ခံပုံ</span>
+</button>
+<button onclick="switchTab('video')" id="tabBtn-video" class="tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium text-gray-400 hover:text-white hover:bg-studio-800 transition-all">
+<i class="fa-solid fa-film text-sm mb-1"></i>
+<span>ဗီဒီယိုမှဖမ်း</span>
+</button>
+<button onclick="switchTab('ai')" id="tabBtn-ai" class="tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium text-gray-400 hover:text-white hover:bg-studio-800 transition-all">
+<i class="fa-solid fa-wand-magic-sparkles text-sm mb-1 text-pink-400"></i>
+<span>AI စတူဒီယို</span>
+</button>
+<button onclick="switchTab('text')" id="tabBtn-text" class="tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium text-gray-400 hover:text-white hover:bg-studio-800 transition-all">
+<i class="fa-solid fa-font text-sm mb-1"></i>
+<span>စာသားထည့်</span>
+</button>
+<button onclick="switchTab('elements')" id="tabBtn-elements" class="tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium text-gray-400 hover:text-white hover:bg-studio-800 transition-all">
+<i class="fa-solid fa-icons text-sm mb-1"></i>
+<span>စတစ်ကာ/ပုံထပ်</span>
+</button>
+</div>
+
+<!-- Scrollable Tab Content Area -->
+<div class="flex-1 overflow-y-auto p-4 space-y-5">
+
+<!-- TAB 1: BACKGROUND IMAGE & FILTERS -->
+<div id="tabContent-bg" class="tab-content space-y-5">
+<div>
+<h2 class="text-sm font-bold text-white flex items-center gap-2 mb-1">
+<i class="fa-solid fa-cloud-arrow-up text-indigo-400"></i>
+<span>နောက်ခံပုံ တင်ရန် (Upload Background)</span>
+</h2>
+<p class="text-xs text-gray-400 mb-3">သင့်ဖုန်း သို့မဟုတ် ကွန်ပျူတာထဲမှ ပုံကို ရွေးချယ်တင်ပါ။</p>
+
+<label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 rounded-2xl bg-studio-800/50 hover:bg-studio-800 cursor-pointer transition group">
+<div class="flex flex-col items-center justify-center pt-4 pb-5">
+<div class="w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-2 group-hover:scale-110 transition">
+<i class="fa-solid fa-upload"></i>
+</div>
+<p class="text-xs font-semibold text-gray-200">ပုံရွေးချယ်ရန် နှိပ်ပါ (Click to Upload)</p>
+<p class="text-[11px] text-gray-400 mt-0.5">JPG, PNG, WEBP စိတ်ကြိုက်တင်နိုင်သည်</p>
+</div>
+<input type="file" id="bgImageInput" accept="image/*" class="hidden" onchange="handleBgImageUpload(event)">
+</label>
+</div>
+
+<!-- Ready-made Starter Gradient & Studio Backgrounds -->
+<div>
+<label class="text-xs font-semibold text-gray-300 block mb-2.5">အသင့်သုံး နောက်ခံဒီဇိုင်းများ (Quick Templates)</label>
+<div class="grid grid-cols-4 gap-2">
+<button onclick="applyPresetBackground('cyber')" class="h-14 rounded-xl bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-700 border border-white/10 hover:scale-105 transition flex items-end p-1.5">
+<span class="text-[10px] font-medium bg-black/50 px-1.5 rounded">Cyber</span>
+</button>
+<button onclick="applyPresetBackground('fire')" class="h-14 rounded-xl bg-gradient-to-tr from-red-950 via-red-600 to-amber-400 border border-white/10 hover:scale-105 transition flex items-end p-1.5">
+<span class="text-[10px] font-medium bg-black/50 px-1.5 rounded">Hot Fire</span>
+</button>
+<button onclick="applyPresetBackground('emerald')" class="h-14 rounded-xl bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-500 border border-white/10 hover:scale-105 transition flex items-end p-1.5">
+<span class="text-[10px] font-medium bg-black/50 px-1.5 rounded">Money</span>
+</button>
+<button onclick="applyPresetBackground('darkgold')" class="h-14 rounded-xl bg-gradient-to-br from-neutral-950 via-stone-900 to-yellow-600 border border-white/10 hover:scale-105 transition flex items-end p-1.5">
+<span class="text-[10px] font-medium bg-black/50 px-1.5 rounded">Luxury</span>
+</button>
+</div>
+</div>
+
+<!-- Background Color / Adjustments -->
+<div class="bg-studio-800/70 rounded-2xl p-3.5 border border-gray-700/60 space-y-3.5">
+<div class="flex items-center justify-between">
+<h3 class="text-xs font-bold text-gray-200 flex items-center gap-1.5">
+<i class="fa-solid fa-sliders text-indigo-400"></i>
+<span>နောက်ခံပုံ အလင်းအမှောင်နှင့် အရောင်ချိန်ရန်</span>
+</h3>
+<button onclick="resetBgFilters()" class="text-[11px] text-indigo-400 hover:underline">မူလအတိုင်းပြန်ထား</button>
+</div>
+
+<div class="grid grid-cols-2 gap-3">
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>အလင်း (Brightness)</span>
+<span id="val-brightness">100%</span>
+</div>
+<input type="range" id="bgBrightness" min="30" max="180" value="100" class="w-full" oninput="updateBgFilter()">
+</div>
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>Contrast</span>
+<span id="val-contrast">100%</span>
+</div>
+<input type="range" id="bgContrast" min="40" max="200" value="100" class="w-full" oninput="updateBgFilter()">
+</div>
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>အရောင်စိုမှု (Saturation)</span>
+<span id="val-saturation">110%</span>
+</div>
+<input type="range" id="bgSaturation" min="0" max="250" value="110" class="w-full" oninput="updateBgFilter()">
+</div>
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>ဝါးမှု (Blur)</span>
+<span id="val-blur">0px</span>
+</div>
+<input type="range" id="bgBlur" min="0" max="25" value="0" class="w-full" oninput="updateBgFilter()">
+</div>
+</div>
+
+<div class="pt-1 border-t border-gray-700/60 grid grid-cols-3 gap-2">
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>Zoom</span>
+<span id="val-bgScale">100%</span>
+</div>
+<input type="range" id="bgScale" min="50" max="250" value="100" class="w-full" oninput="updateBgFilter()">
+</div>
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>ဘယ်/ညာ ရွှေ့</span>
+</div>
+<input type="range" id="bgPanX" min="-500" max="500" value="0" class="w-full" oninput="updateBgFilter()">
+</div>
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>အပေါ်/အောက်</span>
+</div>
+<input type="range" id="bgPanY" min="-500" max="500" value="0" class="w-full" oninput="updateBgFilter()">
+</div>
+</div>
+</div>
+
+<!-- Cinematic Gradient Vignette Overlay (Makes Text Readable) -->
+<div class="bg-studio-800/70 rounded-2xl p-3.5 border border-gray-700/60 space-y-3">
+<div class="flex items-center justify-between">
+<div>
+<h3 class="text-xs font-bold text-gray-200 flex items-center gap-1.5">
+<i class="fa-solid fa-layer-group text-pink-400"></i>
+<span>စာသားပေါ်လွင်စေသည့် အရိပ်လွှာ (Cinematic Vignette)</span>
+</h3>
+<p class="text-[11px] text-gray-400">စာလုံးများ ပိုမိုဖတ်ရလွယ်ကူစေရန် အောက်ခံအမှောင်/အရောင်လွှာထည့်ပါ</p>
+</div>
+<input type="checkbox" id="vignetteEnabled" checked onchange="updateVignette()" class="w-4 h-4 accent-indigo-500 rounded cursor-pointer">
+</div>
+
+<div class="grid grid-cols-3 gap-2 items-center">
+<div>
+<label class="text-[11px] text-gray-400 block mb-1">ပုံစံ (Direction)</label>
+<select id="vignetteType" onchange="updateVignette()" class="w-full bg-studio-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white outline-none">
+<option value="bottom">အောက်ခြေမှ အပေါ်သို့</option>
+<option value="left">ဘယ်ဘက်မှ ညာသို့</option>
+<option value="radial">ပတ်ပတ်လည် (Radial)</option>
+</select>
+</div>
+<div>
+<label class="text-[11px] text-gray-400 block mb-1">အရောင် (Color)</label>
+<input type="color" id="vignetteColor" value="#000000" onchange="updateVignette()" class="w-full h-8 rounded-lg cursor-pointer bg-studio-900 border border-gray-700 p-0.5">
+</div>
+<div>
+<label class="text-[11px] text-gray-400 block mb-1">အထူအပါး (<span id="val-vignetteOpacity">70%</span>)</label>
+<input type="range" id="vignetteOpacity" min="0" max="100" value="70" oninput="updateVignette()" class="w-full">
+</div>
+</div>
+</div>
+</div>
+
+<!-- TAB 2: CAPTURE FROM VIDEO -->
+<div id="tabContent-video" class="tab-content hidden space-y-4">
+<div>
+<h2 class="text-sm font-bold text-white flex items-center gap-2 mb-1">
+<i class="fa-solid fa-video text-pink-400"></i>
+<span>ဗီဒီယိုမှ ပုံဖမ်းယူရန် (Video Frame Capture)</span>
+</h2>
+<p class="text-xs text-gray-400 mb-3">ဗီဒီယိုဖိုင်ထည့်ပြီး သင်အကြိုက်ဆုံး အခန်း (Frame) ကို ရွေးကာ Thumbnail နောက်ခံပုံအဖြစ် တိုက်ရိုက်သုံးနိုင်ပါသည်။</p>
+
+<label class="flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-dashed border-pink-500/40 hover:border-pink-400 rounded-2xl bg-studio-800/50 hover:bg-studio-800 cursor-pointer transition">
+<i class="fa-solid fa-file-video text-pink-400 text-lg"></i>
+<span class="text-xs font-semibold text-gray-200">ဗီဒီယိုဖိုင် ရွေးချယ်ရန် (Upload MP4/MOV/WEBM)</span>
+<input type="file" id="videoFileInput" accept="video/*" class="hidden" onchange="handleVideoUpload(event)">
+</label>
+</div>
+
+<!-- Video Preview & Frame Scrubber -->
+<div id="videoPlayerContainer" class="bg-studio-800/80 rounded-2xl p-3 border border-gray-700/70 space-y-3">
+<div class="relative rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center">
+<video id="sourceVideo" class="max-h-52 w-full object-contain" playsinline crossorigin="anonymous"></video>
+<div id="videoPlaceholderOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-studio-950/90 text-center p-4">
+<i class="fa-solid fa-clapperboard text-3xl text-gray-600 mb-2"></i>
+<p class="text-xs text-gray-400">ဗီဒီယိုဖိုင် ရွေးချယ်ထားခြင်း မရှိသေးပါ</p>
+</div>
+</div>
+
+<!-- Timeline Scrubber -->
+<div class="space-y-1.5">
+<div class="flex justify-between text-[11px] text-gray-400 font-mono">
+<span id="videoCurrentTime">00:00.0</span>
+<span id="videoDuration">00:00.0</span>
+</div>
+<input type="range" id="videoTimelineSlider" min="0" max="100" step="0.05" value="0" class="w-full" oninput="scrubVideo(this.value)">
+</div>
+
+<!-- Frame Fine-Tuning Controls -->
+<div class="flex items-center justify-between gap-1.5">
+<button onclick="stepVideoFrame(-0.5)" class="flex-1 py-1.5 px-2 bg-studio-700 hover:bg-studio-600 rounded-lg text-[11px] text-gray-200 transition" title="0.5 စက္ကန့် နောက်ဆုတ်">
+<i class="fa-solid fa-backward-step mr-1"></i> -0.5s
+</button>
+<button onclick="stepVideoFrame(-0.05)" class="flex-1 py-1.5 px-2 bg-studio-700 hover:bg-studio-600 rounded-lg text-[11px] text-gray-200 transition" title="1 Frame နောက်ဆုတ်">
+-1 Frame
+</button>
+<button onclick="toggleVideoPlay()" id="videoPlayBtn" class="py-1.5 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs text-white font-semibold transition">
+<i class="fa-solid fa-play"></i>
+</button>
+<button onclick="stepVideoFrame(0.05)" class="flex-1 py-1.5 px-2 bg-studio-700 hover:bg-studio-600 rounded-lg text-[11px] text-gray-200 transition" title="1 Frame ရှေ့တိုး">
++1 Frame
+</button>
+<button onclick="stepVideoFrame(0.5)" class="flex-1 py-1.5 px-2 bg-studio-700 hover:bg-studio-600 rounded-lg text-[11px] text-gray-200 transition" title="0.5 စက္ကန့် ရှေ့တိုး">
++0.5s <i class="fa-solid fa-forward-step ml-1"></i>
+</button>
+</div>
+
+<!-- Capture Buttons -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+<button onclick="captureVideoFrameAsBg()" class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-semibold text-xs shadow-lg flex items-center justify-center gap-2 transition">
+<i class="fa-solid fa-camera"></i>
+<span>နောက်ခံပုံအဖြစ် သုံးမည်</span>
+</button>
+<button onclick="captureVideoFrameAsOverlay()" class="w-full py-2.5 px-3 rounded-xl bg-studio-700 hover:bg-studio-600 text-white font-semibold text-xs border border-gray-600 flex items-center justify-center gap-2 transition">
+<i class="fa-solid fa-clone"></i>
+<span>အပေါ်ထပ်ပုံ (Layer) အဖြစ်ထည့်</span>
+</button>
+</div>
+</div>
+</div>
+
+<!-- TAB 3: AI GENERATOR (IMAGE & BURMESE HOOK TEXT) -->
+<div id="tabContent-ai" class="tab-content hidden space-y-5">
+
+<!-- Section A: AI Background Image Generator -->
+<div class="bg-gradient-to-br from-indigo-950/60 via-studio-800 to-purple-950/50 rounded-2xl p-4 border border-indigo-500/30 space-y-3">
+<div class="flex items-center justify-between">
+<h2 class="text-sm font-bold text-white flex items-center gap-2">
+<i class="fa-solid fa-wand-magic-sparkles text-pink-400"></i>
+<span>AI ဖြင့် နောက်ခံပုံထုတ်ရန် (AI Image)</span>
+</h2>
+<span class="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">Gemini 3.1 Flash</span>
+</div>
+<p class="text-xs text-gray-300">သင်လိုချင်သော နောက်ခံပုံစံကို မြန်မာလို သို့မဟုတ် အင်္ဂလိပ်လို ရေးပေးပါ။</p>
+
+<textarea id="aiImagePrompt" rows="2" placeholder="ဥပမာ - စိတ်လှုပ်ရှားဖွယ် ဂိမ်းခန်းမီးရောင်စုံ နောက်ခံ / Futuristic neon tech studio background with dramatic lighting..." class="w-full bg-studio-950/90 border border-gray-700 focus:border-indigo-500 rounded-xl p-2.5 text-xs text-white placeholder-gray-500 outline-none resize-none"></textarea>
+
+<!-- Quick Prompt Chips -->
+<div class="flex flex-wrap gap-1.5">
+<button onclick="setAiPrompt('Cinematic YouTube studio background with glowing neon blue and magenta lights, bokeh, depth of field, high contrast, no text')" class="text-[10px] px-2 py-1 rounded-lg bg-studio-800 hover:bg-indigo-600/40 text-gray-300 border border-gray-700 transition">🎙️ YouTube Studio</button>
+<button onclick="setAiPrompt('Dramatic breaking news world map background with glowing red and gold alerts, dark cinematic atmosphere, no text')" class="text-[10px] px-2 py-1 rounded-lg bg-studio-800 hover:bg-indigo-600/40 text-gray-300 border border-gray-700 transition">🌍 သတင်း/ဗဟုသုတ</button>
+<button onclick="setAiPrompt('Luxury golden coins and glowing financial stock chart rising in dark room, dramatic lighting, ultra detailed, no text')" class="text-[10px] px-2 py-1 rounded-lg bg-studio-800 hover:bg-indigo-600/40 text-gray-300 border border-gray-700 transition">💰 စီးပွားရေး/နည်းပညာ</button>
+<button onclick="setAiPrompt('Spooky mysterious dark forest at night with glowing fog and ancient pagoda silhouette, cinematic thriller vibe, no text')" class="text-[10px] px-2 py-1 rounded-lg bg-studio-800 hover:bg-indigo-600/40 text-gray-300 border border-gray-700 transition">👻 ပဟေဠိ/ထူးဆန်းထွေလာ</button>
+</div>
+
+<button onclick="generateAiBackground()" id="aiImgBtn" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-semibold text-xs shadow-lg flex items-center justify-center gap-2 transition">
+<i class="fa-solid fa-paintbrush"></i>
+<span>AI ဖြင့် နောက်ခံပုံ ထုတ်မည် (Generate Background)</span>
+</button>
+</div>
+
+<!-- Section B: AI Burmese Hook & Catchy Title Generator -->
+<div class="bg-studio-800/80 rounded-2xl p-4 border border-gray-700/70 space-y-3">
+<div class="flex items-center justify-between">
+<h2 class="text-sm font-bold text-white flex items-center gap-2">
+<i class="fa-solid fa-bolt text-amber-400"></i>
+<span>AI မြန်မာ Thumbnail စာသားအိုင်ဒီယာ</span>
+</h2>
+</div>
+<p class="text-xs text-gray-400">သင့်ဗီဒီယိုအကြောင်းအရာကို ရိုက်ထည့်လိုက်ရုံဖြင့် လူစိတ်ဝင်စားမည့် မြန်မာ Thumbnail စာသားတို (Hooks) များကို AI မှ ရေးပေးပါမည်။</p>
+
+<div class="flex gap-2">
+<input type="text" id="aiTopicInput" placeholder="ဥပမာ - ဖုန်းဘက်ထရီ ကြာရှည်ခံအောင် သုံးနည်း / iPhone 16 Review..." class="flex-1 bg-studio-950 border border-gray-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 outline-none">
+<button onclick="generateAiHooks()" id="aiHookBtn" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shrink-0 transition">
+<i class="fa-solid fa-sparkles"></i>
+<span>စာသားထုတ်ရန်</span>
+</button>
+</div>
+
+<!-- Generated Hooks Results List -->
+<div id="aiHooksResults" class="space-y-2 pt-1">
+<div class="text-[11px] text-gray-400 italic text-center py-2">
+ဗီဒီယိုအကြောင်းအရာ ရိုက်ထည့်ပြီး "စာသားထုတ်ရန်" ကို နှိပ်ပါ။
+</div>
+</div>
+</div>
+</div>
+
+<!-- TAB 4: RICH TEXT & BURMESE TYPOGRAPHY EDITOR -->
+<div id="tabContent-text" class="tab-content hidden space-y-4">
+<!-- Add New Text Buttons -->
+<div class="grid grid-cols-2 gap-2">
+<button onclick="addNewTextLayer('ခေါင်းစဉ်စာသား အကြီး', 'headline')" class="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow transition">
+<i class="fa-solid fa-plus"></i>
+<span>ခေါင်းစဉ်စာသား ထည့်ရန်</span>
+</button>
+<button onclick="addNewTextLayer('အထူးသတင်း / NEW', 'badge')" class="py-2.5 px-3 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow transition">
+<i class="fa-solid fa-tag"></i>
+<span>ဘောင်ပါသော စာသားထည့်</span>
+</button>
+</div>
+
+<!-- One-Click Pro Burmese Thumbnail Text Styles -->
+<div>
+<label class="text-xs font-semibold text-gray-300 block mb-2">၁-ချက်နှိပ် စာလုံးဒီဇိုင်းများ (1-Click Pro Text Styles)</label>
+<div class="grid grid-cols-3 gap-2">
+<button onclick="applyTextStylePreset('yellowPop')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 border border-gray-700 text-center transition">
+<span class="block text-sm font-black text-yellow-400" style="text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;">အဝါရောင် ပေါ်လွင်</span>
+</button>
+<button onclick="applyTextStylePreset('redBadge')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 border border-gray-700 text-center transition">
+<span class="inline-block px-2 py-0.5 rounded bg-red-600 text-white text-xs font-bold">အနီဘောင် အထူး</span>
+</button>
+<button onclick="applyTextStylePreset('whiteClean')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 border border-gray-700 text-center transition">
+<span class="block text-sm font-black text-white" style="text-shadow: 2px 2px 4px #000;">အဖြူ သန့်သန့်</span>
+</button>
+<button onclick="applyTextStylePreset('cyberNeon')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 border border-gray-700 text-center transition">
+<span class="block text-sm font-black text-cyan-300" style="text-shadow: 0 0 10px #06b6d4;">နီယွန် လင်းလက်</span>
+</button>
+<button onclick="applyTextStylePreset('gold3d')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 border border-gray-700 text-center transition">
+<span class="block text-sm font-black text-amber-400" style="text-shadow: 2px 3px 0 #78350f;">ရွှေရောင် 3D</span>
+</button>
+<button onclick="applyTextStylePreset('limeBlack')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 border border-gray-700 text-center transition">
+<span class="inline-block px-2 py-0.5 rounded bg-lime-400 text-black text-xs font-black">အစိမ်းတောက်</span>
+</button>
+</div>
+</div>
+
+<!-- Active Text Layer Inspector -->
+<div id="textInspectorPanel" class="bg-studio-800/80 rounded-2xl p-3.5 border border-gray-700/80 space-y-3.5">
+<div class="flex items-center justify-between border-b border-gray-700/70 pb-2">
+<span class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+<i class="fa-solid fa-pen-to-square"></i>
+<span>ရွေးထားသော စာသားပြင်ရန် (Edit Selected Text)</span>
+</span>
+<div class="flex items-center gap-1">
+<button onclick="duplicateSelectedLayer()" title="ပွားမည် (Duplicate)" class="p-1.5 rounded-lg bg-studio-700 hover:bg-studio-600 text-gray-200 text-xs">
+<i class="fa-regular fa-copy"></i>
+</button>
+<button onclick="deleteSelectedLayer()" title="ဖျက်မည် (Delete)" class="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white text-xs transition">
+<i class="fa-solid fa-trash-can"></i>
+</button>
+</div>
+</div>
+
+<!-- Text Input -->
+<div>
+<label class="text-[11px] text-gray-400 block mb-1">စာသား ရေးရန် (Myanmar Unicode / English)</label>
+<textarea id="textContentInput" rows="2" oninput="updateSelectedTextLayer()" placeholder="စာသားရိုက်ထည့်ပါ..." class="w-full bg-studio-950 border border-gray-700 focus:border-indigo-500 rounded-xl p-2.5 text-sm text-white outline-none resize-none font-myanmar"></textarea>
+</div>
+
+<!-- Font Family & Size -->
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-[11px] text-gray-400 block mb-1">ဖောင့် (Font Family)</label>
+<select id="textFontFamily" onchange="updateSelectedTextLayer()" class="w-full bg-studio-950 border border-gray-700 rounded-lg px-2.5 py-2 text-xs text-white outline-none">
+<option value="'Noto Sans Myanmar', sans-serif">Noto Sans Myanmar (အထူ/ခေတ်မီ)</option>
+<option value="'Padauk', sans-serif">Padauk (ပိတောက် မြန်မာ)</option>
+<option value="'Montserrat', 'Noto Sans Myanmar', sans-serif">Montserrat Bold</option>
+<option value="'Anton', 'Noto Sans Myanmar', sans-serif">Anton (YouTube Impact)</option>
+<option value="'Bebas Neue', 'Noto Sans Myanmar', sans-serif">Bebas Neue (Tall Title)</option>
+</select>
+</div>
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>စာလုံးအရွယ်အစား (Size)</span>
+<span id="val-fontSize">78px</span>
+</div>
+<input type="range" id="textFontSize" min="20" max="220" value="78" oninput="updateSelectedTextLayer()" class="w-full mt-2">
+</div>
+</div>
+
+<!-- Text Color & Outline Stroke -->
+<div class="grid grid-cols-3 gap-2.5 pt-1">
+<div>
+<label class="text-[11px] text-gray-400 block mb-1">စာလုံးအရောင်</label>
+<input type="color" id="textFillColor" value="#facc15" oninput="updateSelectedTextLayer()" class="w-full h-9 rounded-lg cursor-pointer bg-studio-950 border border-gray-700 p-0.5">
+</div>
+<div>
+<label class="text-[11px] text-gray-400 block mb-1">အနားသတ်မျဉ်းအရောင်</label>
+<input type="color" id="textStrokeColor" value="#000000" oninput="updateSelectedTextLayer()" class="w-full h-9 rounded-lg cursor-pointer bg-studio-950 border border-gray-700 p-0.5">
+</div>
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>အနားသတ်အထူ</span>
+<span id="val-strokeWidth">12</span>
+</div>
+<input type="range" id="textStrokeWidth" min="0" max="35" value="12" oninput="updateSelectedTextLayer()" class="w-full mt-2">
+</div>
+</div>
+
+<!-- Background Highlight Box / Pill Badge Controls -->
+<div class="bg-studio-900/90 p-3 rounded-xl border border-gray-700/60 space-y-2.5">
+<div class="flex items-center justify-between">
+<label class="text-xs font-semibold text-gray-200 flex items-center gap-1.5 cursor-pointer">
+<input type="checkbox" id="textBgBoxEnabled" onchange="updateSelectedTextLayer()" class="w-4 h-4 accent-indigo-500 rounded">
+<span>စာသားနောက်ခံဘောင် (Highlight Box / Badge)</span>
+</label>
+<input type="color" id="textBgBoxColor" value="#dc2626" oninput="updateSelectedTextLayer()" class="w-8 h-6 rounded cursor-pointer bg-transparent border border-gray-600">
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<div class="flex justify-between text-[10px] text-gray-400 mb-1">
+<span>ဘောင်အကျယ် (Padding)</span>
+</div>
+<input type="range" id="textBgPadding" min="4" max="50" value="18" oninput="updateSelectedTextLayer()" class="w-full">
+</div>
+<div>
+<div class="flex justify-between text-[10px] text-gray-400 mb-1">
+<span>ထောင့်ချိုး (Rounded)</span>
+</div>
+<input type="range" id="textBgRadius" min="0" max="50" value="14" oninput="updateSelectedTextLayer()" class="w-full">
+</div>
+</div>
+</div>
+
+<!-- Shadow & Rotation -->
+<div class="grid grid-cols-2 gap-3">
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>အရိပ်အထူ (Shadow)</span>
+<span id="val-shadowBlur">15</span>
+</div>
+<input type="range" id="textShadowBlur" min="0" max="50" value="15" oninput="updateSelectedTextLayer()" class="w-full">
+</div>
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>စောင်းဒီဂရီ (Rotate)</span>
+<span id="val-rotation">0°</span>
+</div>
+<input type="range" id="textRotation" min="-45" max="45" value="0" oninput="updateSelectedTextLayer()" class="w-full">
+</div>
+</div>
+</div>
+</div>
+
+<!-- TAB 5: STICKERS, ARROWS, BADGES & OVERLAY CUTOUT IMAGES -->
+<div id="tabContent-elements" class="tab-content hidden space-y-5">
+
+<!-- Secondary Cutout / Logo Upload -->
+<div class="bg-studio-800/80 rounded-2xl p-3.5 border border-gray-700/70 space-y-2.5">
+<h3 class="text-xs font-bold text-white flex items-center gap-2">
+<i class="fa-solid fa-user-plus text-indigo-400"></i>
+<span>အပေါ်ထပ် ပုံ/လိုဂို ထည့်ရန် (Add Cutout / Logo Overlay)</span>
+</h3>
+<p class="text-[11px] text-gray-400">နောက်ခံဖောက်ထားသော လူပုံ (PNG Cutout)၊ ပစ္စည်းပုံ သို့မဟုတ် Channel Logo ထပ်တင်နိုင်ပါသည်။</p>
+<label class="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 cursor-pointer text-xs font-semibold transition">
+<i class="fa-solid fa-images"></i>
+<span>အပေါ်ထပ်ပုံ ရွေးချယ်ရန် (Upload Image Layer)</span>
+<input type="file" accept="image/*" class="hidden" onchange="handleOverlayImageUpload(event)">
+</label>
+</div>
+
+<!-- Attention Arrows & Pointers -->
+<div>
+<label class="text-xs font-semibold text-gray-300 block mb-2">မြှားနှင့် အမှတ်အသားများ (Click to Add)</label>
+<div class="grid grid-cols-4 gap-2">
+<button onclick="addStickerLayer('arrow-red')" class="p-2.5 rounded-xl bg-studio-800 hover:bg-studio-700 border border-gray-700 flex flex-col items-center gap-1 transition">
+<span class="text-2xl">↗️</span>
+<span class="text-[10px] text-gray-400">မြှားနီ</span>
+</button>
+<button onclick="addStickerLayer('circle-red')" class="p-2.5 rounded-xl bg-studio-800 hover:bg-studio-700 border border-gray-700 flex flex-col items-center gap-1 transition">
+<span class="text-2xl">⭕</span>
+<span class="text-[10px] text-gray-400">အဝိုင်းနီ</span>
+</button>
+<button onclick="addStickerLayer('check')" class="p-2.5 rounded-xl bg-studio-800 hover:bg-studio-700 border border-gray-700 flex flex-col items-center gap-1 transition">
+<span class="text-2xl">✅</span>
+<span class="text-[10px] text-gray-400">အမှန်ခြစ်</span>
+</button>
+<button onclick="addStickerLayer('cross')" class="p-2.5 rounded-xl bg-studio-800 hover:bg-studio-700 border border-gray-700 flex flex-col items-center gap-1 transition">
+<span class="text-2xl">❌</span>
+<span class="text-[10px] text-gray-400">အမှားခြစ်</span>
+</button>
+</div>
+</div>
+
+<!-- Popular Reaction Emojis -->
+<div>
+<label class="text-xs font-semibold text-gray-300 block mb-2">လူကြိုက်များသော စတစ်ကာ အီမိုဂျီများ (Emojis)</label>
+<div class="grid grid-cols-5 gap-2">
+<button onclick="addEmojiSticker('😱')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-2xl transition hover:scale-110">😱</button>
+<button onclick="addEmojiSticker('🔥')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-2xl transition hover:scale-110">🔥</button>
+<button onclick="addEmojiSticker('🤯')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-2xl transition hover:scale-110">🤯</button>
+<button onclick="addEmojiSticker('💰')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-2xl transition hover:scale-110">💰</button>
+<button onclick="addEmojiSticker('⚠️')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-2xl transition hover:scale-110">⚠️</button>
+<button onclick="addEmojiSticker('🤫')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-2xl transition hover:scale-110">🤫</button>
+<button onclick="addEmojiSticker('💯')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-2xl transition hover:scale-110">💯</button>
+<button onclick="addEmojiSticker('⚡')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-2xl transition hover:scale-110">⚡</button>
+<button onclick="addEmojiSticker('😭')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-2xl transition hover:scale-110">😭</button>
+<button onclick="addEmojiSticker('🇲🇲')" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-2xl transition hover:scale-110">🇲🇲</button>
+</div>
+</div>
+
+<!-- Selected Sticker / Image Layer Controls -->
+<div id="elementInspectorPanel" class="bg-studio-800/80 rounded-2xl p-3.5 border border-gray-700/80 space-y-3">
+<div class="flex items-center justify-between border-b border-gray-700 pb-2">
+<span class="text-xs font-bold text-indigo-300">ရွေးထားသော ပုံ/စတစ်ကာ ချိန်ညှိရန်</span>
+<button onclick="deleteSelectedLayer()" class="px-2 py-1 rounded bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white text-xs transition">
+<i class="fa-solid fa-trash-can mr-1"></i>ဖျက်မည်
+</button>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>အရွယ်အစား (Scale)</span>
+</div>
+<input type="range" id="elementScaleSlider" min="20" max="300" value="100" oninput="updateSelectedElementLayer()" class="w-full">
+</div>
+<div>
+<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+<span>စောင်းဒီဂရီ (Rotate)</span>
+</div>
+<input type="range" id="elementRotationSlider" min="-180" max="180" value="0" oninput="updateSelectedElementLayer()" class="w-full">
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</aside>
+
+<!-- RIGHT/CENTER WORKSPACE: Interactive Canvas & Layer Toolbar -->
+<section class="flex-1 flex flex-col bg-studio-950 canvas-checkerboard relative overflow-hidden min-h-[420px]">
+
+<!-- Floating Top Canvas Toolbar (Layer Ordering & Quick Actions) -->
+<div class="w-full px-4 py-2.5 bg-studio-900/80 backdrop-blur-md border-b border-gray-800/80 flex flex-wrap items-center justify-between gap-2 z-20">
+<div class="flex items-center gap-2 text-xs text-gray-300">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-studio-800 border border-gray-700 font-mono text-[11px]" id="canvasResolutionBadge">
+<i class="fa-solid fa-expand text-indigo-400"></i> 1280 × 720 px
+</span>
+<span class="text-gray-400 hidden sm:inline text-[11px]">
+<i class="fa-solid fa-hand-pointer text-indigo-400 mr-1"></i>ပုံပေါ်ရှိ စာသားနှင့် စတစ်ကာများကို ဖိဆွဲ၍ နေရာရွှေ့နိုင်ပါသည်
+</span>
+</div>
+
+<!-- Selected Layer Quick Action Bar -->
+<div class="flex items-center gap-1.5">
+<button onclick="moveLayerOrder(1)" title="အပေါ်သို့တင် (Bring Forward)" class="px-2.5 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 text-gray-300 hover:text-white border border-gray-700 text-xs flex items-center gap-1 transition">
+<i class="fa-solid fa-arrow-up"></i>
+<span class="hidden md:inline">အပေါ်တင်</span>
+</button>
+<button onclick="moveLayerOrder(-1)" title="အောက်သို့ပို့ (Send Backward)" class="px-2.5 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 text-gray-300 hover:text-white border border-gray-700 text-xs flex items-center gap-1 transition">
+<i class="fa-solid fa-arrow-down"></i>
+<span class="hidden md:inline">အောက်ပို့</span>
+</button>
+<button onclick="centerSelectedLayer()" title="အလယ်ဗဟိုချိန် (Center)" class="px-2.5 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 text-gray-300 hover:text-white border border-gray-700 text-xs flex items-center gap-1 transition">
+<i class="fa-solid fa-align-center"></i>
+<span class="hidden md:inline">အလယ်ချိန်</span>
+</button>
+<button onclick="duplicateSelectedLayer()" title="ပွားမည် (Duplicate)" class="px-2.5 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 text-gray-300 hover:text-white border border-gray-700 text-xs flex items-center gap-1 transition">
+<i class="fa-regular fa-copy"></i>
+</button>
+<button onclick="deleteSelectedLayer()" title="ဖျက်မည် (Delete)" class="px-2.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 text-xs flex items-center gap-1 transition">
+<i class="fa-solid fa-trash-can"></i>
+</button>
+</div>
+</div>
+
+<!-- Interactive Canvas Viewport Container -->
+<div class="flex-1 flex items-center justify-center p-4 sm:p-8 overflow-auto relative">
+
+<!-- AI Loading Overlay -->
+<div id="canvasLoadingOverlay" class="hidden absolute inset-0 bg-studio-950/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center">
+<div class="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center mb-3 animate-pulse">
+<i class="fa-solid fa-wand-magic-sparkles text-2xl text-indigo-400 animate-spin"></i>
+</div>
+<h3 id="loadingTitle" class="text-sm font-bold text-white mb-1">AI ဖြင့် ပုံဖန်တီးနေပါသည်...</h3>
+<p class="text-xs text-gray-400">ခေတ္တစောင့်ဆိုင်းပေးပါ (စက္ကန့်အနည်းငယ် ကြာနိုင်ပါသည်)</p>
+</div>
+
+<!-- The HTML5 Thumbnail Canvas -->
+<div class="relative flex items-center justify-center max-w-full max-h-full">
+<canvas id="thumbnailCanvas" width="1280" height="720" class="max-w-full max-h-[68vh] w-auto h-auto rounded-lg cursor-move"></canvas>
+</div>
+</div>
+
+<!-- Bottom Layer Strip -->
+<div class="px-4 py-2 bg-studio-900/90 border-t border-gray-800/80 flex items-center justify-between gap-2 overflow-x-auto">
+<div class="flex items-center gap-2 text-xs text-gray-400 shrink-0">
+<i class="fa-solid fa-layer-group text-indigo-400"></i>
+<span>အလွှာများ (Layers):</span>
+</div>
+<div id="layerPillsContainer" class="flex items-center gap-1.5 overflow-x-auto py-0.5 flex-1">
+<!-- Dynamically populated layer chips -->
+</div>
+</div>
+</section>
+</main>
+
+<!-- Application Logic -->
+<script>
+// ==========================================
+// 1. STATE & CONFIGURATION
+// ==========================================
+const apiKey = ""; // Canvas injects runtime API key automatically
+const canvas = document.getElementById('thumbnailCanvas');
+const ctx = canvas.getContext('2d');
+
+const ASPECT_RATIOS = {
+'16:9': { width: 1280, height: 720, label: '1280 × 720 px (YouTube)' },
+'9:16': { width: 720, height: 1280, label: '720 × 1280 px (Shorts/TikTok)' },
+'1:1': { width: 1080, height: 1080, label: '1080 × 1080 px (Square)' }
+};
+
+let appState = {
+aspectRatio: '16:9',
+bgType: 'preset', // 'preset' | 'image'
+bgPreset: 'cyber',
+bgImage: null,
+bgFilters: {
+brightness: 100,
+contrast: 100,
+saturation: 110,
+blur: 0,
+scale: 100,
+panX: 0,
+panY: 0
+},
+vignette: {
+enabled: true,
+type: 'bottom',
+color: '#000000',
+opacity: 70
+},
+layers: [],
+selectedLayerId: null,
+isDragging: false,
+dragOffsetX: 0,
+dragOffsetY: 0
+};
+
+// ==========================================
+// 2. INITIALIZATION & DEFAULT STARTER DESIGN
+// ==========================================
+window.onload = function() {
+initDefaultProject();
+setupCanvasInteractions();
+setupVideoEvents();
+// Ensure web fonts render cleanly once loaded
+if (document.fonts) {
+document.fonts.ready.then(() => renderCanvas());
+}
+};
+
+function initDefaultProject() {
+appState.layers = [
+{
+id: 'layer_badge_1',
+type: 'text',
+text: 'အထူးသတင်း • MUST WATCH',
+x: 110,
+y: 445,
+fontFamily: "'Noto Sans Myanmar', sans-serif",
+fontSize: 34,
+fillColor: '#ffffff',
+strokeColor: '#000000',
+strokeWidth: 0,
+bgBoxEnabled: true,
+bgBoxColor: '#e11d48',
+bgPadding: 16,
+bgRadius: 12,
+shadowBlur: 12,
+rotation: 0
+},
+{
+id: 'layer_title_1',
+type: 'text',
+text: 'လူတိုင်းသိထားသင့်တဲ့ လျှို့ဝှက်ချက် (၅) ခု!',
+x: 110,
+y: 535,
+fontFamily: "'Noto Sans Myanmar', sans-serif",
+fontSize: 66,
+fillColor: '#facc15',
+strokeColor: '#000000',
+strokeWidth: 14,
+bgBoxEnabled: false,
+bgBoxColor: '#000000',
+bgPadding: 16,
+bgRadius: 12,
+shadowBlur: 20,
+rotation: 0
+},
+{
+id: 'layer_sub_1',
+type: 'text',
+text: 'AI ဖြင့် မိနစ်ပိုင်းအတွင်း Thumbnail အလန်းစားဖန်တီးနည်း',
+x: 110,
+y: 635,
+fontFamily: "'Noto Sans Myanmar', sans-serif",
+fontSize: 40,
+fillColor: '#ffffff',
+strokeColor: '#000000',
+strokeWidth: 10,
+bgBoxEnabled: false,
+bgBoxColor: '#1e293b',
+bgPadding: 12,
+bgRadius: 10,
+shadowBlur: 15,
+rotation: 0
+},
+{
+id: 'layer_emoji_1',
+type: 'emoji',
+emoji: '🔥',
+x: 1120,
+y: 160,
+scale: 130,
+rotation: 12
+}
+ ];
+appState.selectedLayerId = 'layer_title_1';
+syncInspectorWithSelectedLayer();
+renderCanvas();
+}
+
+function resetProject() {
+appState.bgType = 'preset';
+appState.bgPreset = 'cyber';
+appState.bgImage = null;
+resetBgFilters();
+initDefaultProject();
+showToast('မူလဒီဇိုင်းအတိုင်း အသစ်ပြန်စပြီးပါပြီ', 'info');
+}
+
+// ==========================================
+// 3. CORE CANVAS RENDERING ENGINE
+// ==========================================
+function renderCanvas(exportMode = false) {
+const W = canvas.width;
+const H = canvas.height;
+ctx.clearRect(0, 0, W, H);
+
+// 1. Draw Background (Preset or Uploaded/AI/Video Frame Image)
+ctx.save();
+const f = appState.bgFilters;
+ctx.filter = brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturation}%) blur(${f.blur}px);
+
+if (appState.bgType === 'image' && appState.bgImage) {
+const img = appState.bgImage;
+const scaleFactor = f.scale / 100;
+const imgRatio = img.width / img.height;
+const canvasRatio = W / H;
+
+let drawW, drawH;
+if (imgRatio > canvasRatio) {
+drawH = H * scaleFactor;
+drawW = drawH * imgRatio;
+} else {
+drawW = W * scaleFactor;
+drawH = drawW / imgRatio;
+}
+
+const drawX = (W - drawW) / 2 + Number(f.panX);
+const drawY = (H - drawH) / 2 + Number(f.panY);
+ctx.drawImage(img, drawX, drawY, drawW, drawH);
+} else {
+drawPresetBackground(W, H, appState.bgPreset);
+}
+ctx.restore();
+
+// 2. Draw Cinematic Vignette / Gradient Overlay
+if (appState.vignette.enabled && appState.vignette.opacity > 0) {
+ctx.save();
+const alpha = appState.vignette.opacity / 100;
+const rgb = hexToRgb(appState.vignette.color);
+let grad;
+
+if (appState.vignette.type === 'bottom') {
+grad = ctx.createLinearGradient(0, H * 0.25, 0, H);
+grad.addColorStop(0, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)); grad.addColorStop(0.6,rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha * 0.65})); grad.addColorStop(1,rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})); } else if (appState.vignette.type === 'left') { grad = ctx.createLinearGradient(W * 0.85, 0, 0, 0); grad.addColorStop(0,rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0));
+grad.addColorStop(1, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha}));
+} else {
+grad = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.2, W / 2, H / 2, Math.max(W, H) * 0.75);
+grad.addColorStop(0, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)); grad.addColorStop(1,rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
+}
+
+ctx.fillStyle = grad;
+ctx.fillRect(0, 0, W, H);
+ctx.restore();
+}
+
+// 3. Draw All Layers in Order
+appState.layers.forEach(layer => {
+ctx.save();
+if (layer.type === 'text') {
+drawTextLayer(layer);
+} else if (layer.type === 'emoji') {
+drawEmojiLayer(layer);
+} else if (layer.type === 'sticker') {
+drawStickerLayer(layer);
+} else if (layer.type === 'image') {
+drawImageOverlayLayer(layer);
+}
+ctx.restore();
+});
+
+// 4. Draw Selection Box if not exporting
+if (!exportMode && appState.selectedLayerId) {
+const activeLayer = appState.layers.find(l => l.id === appState.selectedLayerId);
+if (activeLayer && activeLayer._bounds) {
+ctx.save();
+const b = activeLayer._bounds;
+ctx.translate(b.cx, b.cy);
+ctx.rotate((activeLayer.rotation || 0) * Math.PI / 180);
+ctx.strokeStyle = '#6366f1';
+ctx.lineWidth = 2.5;
+ctx.setLineDash([8, 6]);
+ctx.strokeRect(-b.w / 2 - 8, -b.h / 2 - 8, b.w + 16, b.h + 16);
+
+// Corner handle dots
+ctx.setLineDash([]);
+ctx.fillStyle = '#ffffff';
+const corners = [
+[-b.w / 2 - 8, -b.h / 2 - 8],
+[b.w / 2 + 8, -b.h / 2 - 8],
+[-b.w / 2 - 8, b.h / 2 + 8],
+[b.w / 2 + 8, b.h / 2 + 8]
+];
+corners.forEach(([cx, cy]) => {
+ctx.beginPath();
+ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+ctx.fill();
+ctx.stroke();
+});
+ctx.restore();
+}
+}
+
+if (!exportMode) {
+renderLayerPills();
+}
+}
+
+function drawPresetBackground(W, H, preset) {
+let grad = ctx.createLinearGradient(0, 0, W, H);
+if (preset === 'cyber') {
+grad.addColorStop(0, '#0f172a');
+grad.addColorStop(0.5, '#311042');
+grad.addColorStop(1, '#4f46e5');
+} else if (preset === 'fire') {
+grad.addColorStop(0, '#1f0707');
+grad.addColorStop(0.55, '#991b1b');
+grad.addColorStop(1, '#f59e0b');
+} else if (preset === 'emerald') {
+grad.addColorStop(0, '#042f2e');
+grad.addColorStop(0.6, '#065f46');
+grad.addColorStop(1, '#10b981');
+} else {
+grad.addColorStop(0, '#09090b');
+grad.addColorStop(0.6, '#27272a');
+grad.addColorStop(1, '#ca8a04');
+}
+ctx.fillStyle = grad;
+ctx.fillRect(0, 0, W, H);
+
+// Subtle Studio Grid & Glow Orbs
+ctx.save();
+ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+ctx.lineWidth = 1;
+const step = 64;
+for (let x = 0; x < W; x += step) {
+ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+}
+for (let y = 0; y < H; y += step) {
+ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+}
+
+const orb = ctx.createRadialGradient(W * 0.78, H * 0.3, 20, W * 0.78, H * 0.3, W * 0.45);
+orb.addColorStop(0, 'rgba(236, 72, 153, 0.32)');
+orb.addColorStop(1, 'rgba(236, 72, 153, 0)');
+ctx.fillStyle = orb;
+ctx.fillRect(0, 0, W, H);
+ctx.restore();
+}
+
+function drawTextLayer(layer) {
+ctx.font = 900${layer.fontSize}px ${layer.fontFamily};
+ctx.textBaseline = 'middle';
+const lines = (layer.text || '').split('\n');
+const lineHeight = layer.fontSize * 1.28;
+
+let maxLineW = 0;
+lines.forEach(line => {
+const metrics = ctx.measureText(line);
+if (metrics.width > maxLineW) maxLineW = metrics.width;
+});
+
+const totalH = lines.length * lineHeight;
+const pad = layer.bgBoxEnabled ? Number(layer.bgPadding || 16) : 0;
+const boxW = maxLineW + pad * 2;
+const boxH = totalH + pad * 1.4;
+
+const cx = layer.x + boxW / 2;
+const cy = layer.y + boxH / 2;
+
+layer._bounds = { cx, cy, w: boxW, h: boxH };
+
+ctx.translate(cx, cy);
+ctx.rotate((layer.rotation || 0) * Math.PI / 180);
+
+// Background Highlight Box / Badge
+if (layer.bgBoxEnabled) {
+ctx.save();
+ctx.fillStyle = layer.bgBoxColor || '#dc2626';
+ctx.shadowColor = 'rgba(0,0,0,0.55)';
+ctx.shadowBlur = layer.shadowBlur || 12;
+ctx.shadowOffsetY = 6;
+roundRect(ctx, -boxW / 2, -boxH / 2, boxW, boxH, Number(layer.bgRadius || 12));
+ctx.fill();
+ctx.restore();
+}
+
+// Draw Each Line of Text
+lines.forEach((line, idx) => {
+const lineY = -totalH / 2 + (idx + 0.5) * lineHeight;
+const lineX = -maxLineW / 2;
+
+// Shadow + Thick Stroke
+if (layer.strokeWidth > 0) {
+ctx.save();
+ctx.lineJoin = 'round';
+ctx.miterLimit = 2;
+ctx.lineWidth = layer.strokeWidth;
+ctx.strokeStyle = layer.strokeColor || '#000000';
+ctx.shadowColor = 'rgba(0,0,0,0.85)';
+ctx.shadowBlur = layer.shadowBlur || 0;
+ctx.shadowOffsetY = layer.shadowBlur > 0 ? 5 : 0;
+ctx.strokeText(line, lineX, lineY);
+ctx.restore();
+} else if (!layer.bgBoxEnabled && layer.shadowBlur > 0) {
+ctx.shadowColor = 'rgba(0,0,0,0.85)';
+ctx.shadowBlur = layer.shadowBlur;
+ctx.shadowOffsetY = 4;
+}
+
+// Main Fill
+ctx.fillStyle = layer.fillColor || '#ffffff';
+ctx.fillText(line, lineX, lineY);
+});
+}
+
+function drawEmojiLayer(layer) {
+const size = (layer.scale || 100) * 1.1;
+ctx.font = ``${size}px sans-serif`;
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+layer._bounds = { cx: layer.x, cy: layer.y, w: size, h: size };
+
+ctx.translate(layer.x, layer.y);
+ctx.rotate((layer.rotation || 0) * Math.PI / 180);
+ctx.shadowColor = 'rgba(0,0,0,0.55)';
+ctx.shadowBlur = 18;
+ctx.shadowOffsetY = 6;
+ctx.fillText(layer.emoji, 0, 0);
+}
+
+function drawStickerLayer(layer) {
+const size = (layer.scale || 100) * 1.4;
+layer._bounds = { cx: layer.x, cy: layer.y, w: size, h: size };
+ctx.translate(layer.x, layer.y);
+ctx.rotate((layer.rotation || 0) * Math.PI / 180);
+ctx.shadowColor = 'rgba(0,0,0,0.6)';
+ctx.shadowBlur = 14;
+
+if (layer.stickerType === 'arrow-red') {
+ctx.fillStyle = '#ef4444';
+ctx.strokeStyle = '#ffffff';
+ctx.lineWidth = 4;
+ctx.beginPath();
+ctx.moveTo(-size * 0.45, size * 0.35);
+ctx.quadraticCurveTo(-size * 0.1, size * 0.3, size * 0.15, -size * 0.15);
+ctx.lineTo(0, -size * 0.25);
+ctx.lineTo(size * 0.42, -size * 0.42);
+ctx.lineTo(size * 0.32, size * 0.02);
+ctx.lineTo(size * 0.22, -size * 0.08);
+ctx.quadraticCurveTo(-size * 0.05, size * 0.45, -size * 0.45, size * 0.35);
+ctx.closePath();
+ctx.fill();
+ctx.stroke();
+} else if (layer.stickerType === 'circle-red') {
+ctx.strokeStyle = '#ef4444';
+ctx.lineWidth = 10;
+ctx.beginPath();
+ctx.arc(0, 0, size * 0.45, 0, Math.PI * 2);
+ctx.stroke();
+} else if (layer.stickerType === 'check' || layer.stickerType === 'cross') {
+ctx.font = ${size * 0.85}px sans-serif`;
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+ctx.fillText(layer.stickerType === 'check' ? '✅' : '❌', 0, 0);
+}
+}
+
+function drawImageOverlayLayer(layer) {
+if (!layer.img) return;
+const scale = (layer.scale || 100) / 100;
+const w = layer.baseWidth * scale;
+const h = layer.baseHeight * scale;
+layer._bounds = { cx: layer.x, cy: layer.y, w, h };
+
+ctx.translate(layer.x, layer.y);
+ctx.rotate((layer.rotation || 0) * Math.PI / 180);
+ctx.shadowColor = 'rgba(0,0,0,0.65)';
+ctx.shadowBlur = 22;
+ctx.drawImage(layer.img, -w / 2, -h / 2, w, h);
+}
+
+// ==========================================
+// 4. INTERACTIVE DRAG, TOUCH & SELECTION
+// ==========================================
+function setupCanvasInteractions() {
+const getCanvasCoords = (e) => {
+const rect = canvas.getBoundingClientRect();
+const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+const scaleX = canvas.width / rect.width;
+const scaleY = canvas.height / rect.height;
+return {
+x: (clientX - rect.left) * scaleX,
+y: (clientY - rect.top) * scaleY
+};
+};
+
+const onPointerDown = (e) => {
+const pos = getCanvasCoords(e);
+// Find topmost layer under pointer
+let hitLayer = null;
+for (let i = appState.layers.length - 1; i >= 0; i--) {
+const l = appState.layers[i];
+if (l._bounds) {
+const b = l._bounds;
+if (
+pos.x >= b.cx - b.w / 2 - 12 &&
+pos.x <= b.cx + b.w / 2 + 12 &&
+pos.y >= b.cy - b.h / 2 - 12 &&
+pos.y <= b.cy + b.h / 2 + 12
+) {
+hitLayer = l;
+break;
+}
+}
+}
+
+if (hitLayer) {
+appState.selectedLayerId = hitLayer.id;
+appState.isDragging = true;
+appState.dragOffsetX = pos.x - hitLayer.x;
+appState.dragOffsetY = pos.y - hitLayer.y;
+syncInspectorWithSelectedLayer();
+if (hitLayer.type === 'text') {
+switchTab('text', false);
+} else {
+switchTab('elements', false);
+}
+} else {
+appState.selectedLayerId = null;
+}
+renderCanvas();
+};
+
+const onPointerMove = (e) => {
+if (!appState.isDragging || !appState.selectedLayerId) return;
+if (e.cancelable) e.preventDefault();
+const pos = getCanvasCoords(e);
+const layer = appState.layers.find(l => l.id === appState.selectedLayerId);
+if (layer) {
+layer.x = Math.round(pos.x - appState.dragOffsetX);
+layer.y = Math.round(pos.y - appState.dragOffsetY);
+renderCanvas();
+}
+};
+
+const onPointerUp = () => {
+appState.isDragging = false;
+};
+
+canvas.addEventListener('mousedown', onPointerDown);
+window.addEventListener('mousemove', onPointerMove);
+window.addEventListener('mouseup', onPointerUp);
+
+canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+window.addEventListener('touchmove', onPointerMove, { passive: false });
+window.addEventListener('touchend', onPointerUp);
+}
+
+// ==========================================
+// 5. ASPECT RATIO & BACKGROUND CONTROLS
+// ==========================================
+function setAspectRatio(ratioKey) {
+const config = ASPECT_RATIOS[ratioKey];
+if (!config) return;
+
+const oldW = canvas.width;
+const oldH = canvas.height;
+appState.aspectRatio = ratioKey;
+canvas.width = config.width;
+canvas.height = config.height;
+
+// Proportionally adjust layer positions so nothing gets lost off-screen
+const scaleX = config.width / oldW;
+const scaleY = config.height / oldH;
+appState.layers.forEach(l => {
+l.x = Math.round(l.x * scaleX);
+l.y = Math.round(l.y * scaleY);
+});
+
+document.getElementById('canvasResolutionBadge').innerHTML = <i class="fa-solid fa-expand text-indigo-400"&gt;&lt;/i&gt;${config.label}`;
+
+document.querySelectorAll('.ratio-btn').forEach(btn => {
+btn.className = 'ratio-btn flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-300 hover:text-white transition-all';
+});
+const activeBtn = document.getElementById(ratioBtn-${ratioKey}`);
+if (activeBtn) {
+activeBtn.className = 'ratio-btn flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all bg-indigo-600 text-white shadow';
+}
+
+renderCanvas();
+showToast(Aspect Ratio ကို${ratioKey} ({config.height}) သို့ ပြောင်းလိုက်ပါပြီ`, 'info');
+}
+
+function handleBgImageUpload(event) {
+const file = event.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = function(e) {
+const img = new Image();
+img.onload = function() {
+appState.bgImage = img;
+appState.bgType = 'image';
+renderCanvas();
+showToast('နောက်ခံပုံ တင်ပြီးပါပြီ!', 'success');
+};
+img.src = e.target.result;
+};
+reader.readAsDataURL(file);
+}
+
+function applyPresetBackground(presetName) {
+appState.bgType = 'preset';
+appState.bgPreset = presetName;
+renderCanvas();
+}
+
+function updateBgFilter() {
+appState.bgFilters.brightness = document.getElementById('bgBrightness').value;
+appState.bgFilters.contrast = document.getElementById('bgContrast').value;
+appState.bgFilters.saturation = document.getElementById('bgSaturation').value;
+appState.bgFilters.blur = document.getElementById('bgBlur').value;
+appState.bgFilters.scale = document.getElementById('bgScale').value;
+appState.bgFilters.panX = document.getElementById('bgPanX').value;
+appState.bgFilters.panY = document.getElementById('bgPanY').value;
+
+document.getElementById('val-brightness').textContent = ${appState.bgFilters.brightness}%; document.getElementById('val-contrast').textContent = ``${appState.bgFilters.contrast}%;
+document.getElementById('val-saturation').textContent = ${appState.bgFilters.saturation}%; document.getElementById('val-blur').textContent = ``${appState.bgFilters.blur}px;
+document.getElementById('val-bgScale').textContent = ${appState.bgFilters.scale}%`;
+
+renderCanvas();
+}
+
+function resetBgFilters() {
+appState.bgFilters = { brightness: 100, contrast: 100, saturation: 110, blur: 0, scale: 100, panX: 0, panY: 0 };
+document.getElementById('bgBrightness').value = 100;
+document.getElementById('bgContrast').value = 100;
+document.getElementById('bgSaturation').value = 110;
+document.getElementById('bgBlur').value = 0;
+document.getElementById('bgScale').value = 100;
+document.getElementById('bgPanX').value = 0;
+document.getElementById('bgPanY').value = 0;
+updateBgFilter();
+}
+
+function updateVignette() {
+appState.vignette.enabled = document.getElementById('vignetteEnabled').checked;
+appState.vignette.type = document.getElementById('vignetteType').value;
+appState.vignette.color = document.getElementById('vignetteColor').value;
+appState.vignette.opacity = document.getElementById('vignetteOpacity').value;
+document.getElementById('val-vignetteOpacity').textContent = ``${appState.vignette.opacity}%`;
+renderCanvas();
+}
+
+// ==========================================
+// 6. VIDEO FRAME CAPTURE ENGINE
+// ==========================================
+const videoEl = document.getElementById('sourceVideo');
+const timelineSlider = document.getElementById('videoTimelineSlider');
+
+function setupVideoEvents() {
+videoEl.addEventListener('loadedmetadata', () => {
+timelineSlider.max = videoEl.duration || 100;
+timelineSlider.value = 0;
+document.getElementById('videoDuration').textContent = formatTime(videoEl.duration);
+document.getElementById('videoPlaceholderOverlay').classList.add('hidden');
+});
+
+videoEl.addEventListener('timeupdate', () => {
+if (!timelineSlider.matches(':active')) {
+timelineSlider.value = videoEl.currentTime;
+}
+document.getElementById('videoCurrentTime').textContent = formatTime(videoEl.currentTime);
+});
+
+videoEl.addEventListener('ended', () => {
+document.getElementById('videoPlayBtn').innerHTML = '<i class="fa-solid fa-play"></i>';
+});
+}
+
+function handleVideoUpload(event) {
+const file = event.target.files[0];
+if (!file) return;
+const url = URL.createObjectURL(file);
+videoEl.src = url;
+videoEl.load();
+videoEl.currentTime = 0.1;
+showToast('ဗီဒီယိုဖိုင် တင်ပြီးပါပြီ! Slider ရွှေ့၍ လိုချင်သောအခန်းကို ဖမ်းယူနိုင်ပါပြီ', 'success');
+}
+
+function scrubVideo(timeVal) {
+if (!videoEl.src) return;
+videoEl.pause();
+document.getElementById('videoPlayBtn').innerHTML = '<i class="fa-solid fa-play"></i>';
+videoEl.currentTime = parseFloat(timeVal);
+document.getElementById('videoCurrentTime').textContent = formatTime(videoEl.currentTime);
+}
+
+function stepVideoFrame(deltaSeconds) {
+if (!videoEl.src) return;
+videoEl.pause();
+document.getElementById('videoPlayBtn').innerHTML = '<i class="fa-solid fa-play"></i>';
+const nextTime = Math.min(Math.max(0, videoEl.currentTime + deltaSeconds), videoEl.duration || 0);
+videoEl.currentTime = nextTime;
+}
+
+function toggleVideoPlay() {
+if (!videoEl.src) {
+showToast('ကျေးဇူးပြု၍ ဗီဒီယိုဖိုင် အရင်ရွေးချယ်ပါ', 'error');
+return;
+}
+const btn = document.getElementById('videoPlayBtn');
+if (videoEl.paused) {
+videoEl.play();
+btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+} else {
+videoEl.pause();
+btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+}
+}
+
+function captureVideoFrameAsBg() {
+if (!videoEl.src || videoEl.readyState < 2) {
+showToast('ဖမ်းယူရန် ဗီဒီယိုဖိုင် အရင်တင်ပေးပါ', 'error');
+return;
+}
+const tempCanvas = document.createElement('canvas');
+tempCanvas.width = videoEl.videoWidth || 1280;
+tempCanvas.height = videoEl.videoHeight || 720;
+tempCanvas.getContext('2d').drawImage(videoEl, 0, 0, tempCanvas.width, tempCanvas.height);
+
+const capturedImg = new Image();
+capturedImg.onload = () => {
+appState.bgImage = capturedImg;
+appState.bgType = 'image';
+renderCanvas();
+showToast('ဗီဒီယိုပြကွက်ကို နောက်ခံပုံအဖြစ် သတ်မှတ်ပြီးပါပြီ!', 'success');
+};
+capturedImg.src = tempCanvas.toDataURL('image/png');
+}
+
+function captureVideoFrameAsOverlay() {
+if (!videoEl.src || videoEl.readyState < 2) {
+showToast('ဖမ်းယူရန် ဗီဒီယိုဖိုင် အရင်တင်ပေးပါ', 'error');
+return;
+}
+const tempCanvas = document.createElement('canvas');
+tempCanvas.width = videoEl.videoWidth || 640;
+tempCanvas.height = videoEl.videoHeight || 360;
+tempCanvas.getContext('2d').drawImage(videoEl, 0, 0, tempCanvas.width, tempCanvas.height);
+
+const capturedImg = new Image();
+capturedImg.onload = () => {
+addImageOverlayToCanvas(capturedImg);
+showToast('ဗီဒီယိုပြကွက်ကို အပေါ်ထပ် Layer အဖြစ် ထည့်သွင်းပြီးပါပြီ!', 'success');
+};
+capturedImg.src = tempCanvas.toDataURL('image/png');
+}
+
+function formatTime(sec) {
+if (!sec || isNaN(sec)) return '00:00.0';
+const m = Math.floor(sec / 60).toString().padStart(2, '0');
+const s = (sec % 60).toFixed(1).padStart(4, '0');
+return ${m}:${s};
+}
+
+// ==========================================
+// 7. GEMINI AI GENERATOR (BACKGROUND & HOOKS)
+// ==========================================
+async function fetchWithRetry(url, options, retries = 3) {
+let delay = 1000;
+for (let i = 0; i < retries; i++) {
+try {
+const response = await fetch(url, options);
+if (response.ok) return await response.json();
+if (response.status !== 429 && response.status < 500) {
+const errData = await response.json().catch(() => ({}));
+throw new Error(errData?.error?.message || HTTP ${response.status}`);
+}
+} catch (err) {
+if (i === retries - 1) throw err;
+}
+await new Promise(res => setTimeout(res, delay));
+delay *= 2;
+}
+}
+
+function setAiPrompt(text) {
+document.getElementById('aiImagePrompt').value = text;
+}
+
+async function generateAiBackground() {
+const promptInput = document.getElementById('aiImagePrompt').value.trim();
+if (!promptInput) {
+showToast('AI ပုံထုတ်ရန် လိုချင်သောပုံစံကို အရင်ရေးပေးပါ', 'error');
+return;
+}
+
+const btn = document.getElementById('aiImgBtn');
+const overlay = document.getElementById('canvasLoadingOverlay');
+btn.disabled = true;
+btn.classList.add('opacity-60');
+overlay.classList.remove('hidden');
+
+try {
+const enhancedPrompt = High-impact, vibrant, ultra-detailed YouTube thumbnail background scene:${promptInput}. Cinematic lighting, high contrast, expressive colors, clean composition with space for title text, no text or watermarks on the image.`;
+
+const apiUrl = https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+const payload = {
+contents: [{
+role: 'user',
+parts: [{ text: enhancedPrompt }]
+}],
+generationConfig: {
+responseModalities: ['IMAGE'],
+imageConfig: { aspectRatio: appState.aspectRatio }
+}
+};
+
+const result = await fetchWithRetry(apiUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+});
+
+const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+if (!part || !part.inlineData?.data) {
+throw new Error('Image data not returned');
+}
+
+const img = new Image();
+img.onload = () => {
+appState.bgImage = img;
+appState.bgType = 'image';
+renderCanvas();
+showToast('AI နောက်ခံပုံ အောင်မြင်စွာ ထုတ်ပြီးပါပြီ!', 'success');
+};
+img.src = data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data};
+} catch (err) {
+showToast('AI ပုံထုတ်ရာတွင် အခက်အခဲရှိနေပါသည်။ ထပ်မံကြိုးစားကြည့်ပါ။', 'error');
+} finally {
+btn.disabled = false;
+btn.classList.remove('opacity-60');
+overlay.classList.add('hidden');
+}
+}
+
+async function generateAiHooks() {
+const topic = document.getElementById('aiTopicInput').value.trim();
+if (!topic) {
+showToast('ဗီဒီယိုအကြောင်းအရာကို အရင်ရိုက်ထည့်ပေးပါ', 'error');
+return;
+}
+
+const btn = document.getElementById('aiHookBtn');
+const resultsContainer = document.getElementById('aiHooksResults');
+btn.disabled = true;
+resultsContainer.innerHTML = &lt;div class="flex items-center justify-center gap-2 py-4 text-xs text-amber-300"&gt; &lt;i class="fa-solid fa-circle-notch animate-spin"&gt;&lt;/i&gt; &lt;span&gt;AI မှ ဆွဲဆောင်မှုရှိသော မြန်မာစာသားများ စဉ်းစားပေးနေပါသည်...&lt;/span&gt; &lt;/div&gt;;
+
+try {
+const apiUrl = https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+const systemPrompt = "You are an expert Burmese YouTube & TikTok viral thumbnail strategist. Given a video topic, generate 4 short, punchy, high-CTR Burmese Unicode thumbnail hook texts (3 to 7 words max each) that look great in big bold font on a video thumbnail, along with a short badge text.";
+
+const payload = {
+contents: [{
+parts: [{ text: Video Topic: ${topic}` }]
+}],
+systemInstruction: {
+parts: [{ text: systemPrompt }]
+},
+generationConfig: {
+responseMimeType: "application/json",
+responseSchema: {
+type: "ARRAY",
+items: {
+type: "OBJECT",
+properties: {
+hookText: { type: "STRING" },
+badgeText: { type: "STRING" },
+stylePreset: { type: "STRING" }
+},
+propertyOrdering: ["hookText", "badgeText", "stylePreset"]
+}
+}
+}
+};
+
+const result = await fetchWithRetry(apiUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+});
+
+const rawJson = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+const hooks = JSON.parse(rawJson || '[]');
+
+if (!hooks.length) throw new Error('Empty hooks');
+
+resultsContainer.innerHTML = hooks.map((item, idx) => &lt;div class="p-2.5 rounded-xl bg-studio-900 border border-gray-700/80 hover:border-amber-500/50 flex items-center justify-between gap-2 transition"&gt; &lt;div class="min-w-0"&gt; &lt;span class="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 mb-1"&gt;${escapeHtml(item.badgeText || 'အထူး')}</span>
+<p class="text-xs font-bold text-white font-myanmar truncate">{idx})" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold shrink-0 transition">
+ပုံပေါ်တင်မည်
+</button>
+</div>
+`).join('');
+
+window._lastGeneratedHooks = hooks;
+showToast('AI စာသားအိုင်ဒီယာများ ရရှိပါပြီ!', 'success');
+} catch (err) {
+resultsContainer.innerHTML = <div class="text-xs text-red-400 text-center py-2"&gt;စာသားထုတ်ရာတွင် အခက်အခဲရှိပါသည်။ ထပ်မံနှိပ်ကြည့်ပါ။&lt;/div>;
+} finally {
+btn.disabled = false;
+}
+}
+
+function applyAiHookToCanvas(idx) {
+const hooks = window._lastGeneratedHooks || [];
+const item = hooks[idx];
+if (!item) return;
+
+// Update existing main text layer or add a new one
+let targetLayer = appState.layers.find(l => l.id === appState.selectedLayerId && l.type === 'text');
+if (!targetLayer) {
+targetLayer = appState.layers.find(l => l.type === 'text');
+}
+
+if (targetLayer) {
+targetLayer.text = item.hookText;
+appState.selectedLayerId = targetLayer.id;
+} else {
+addNewTextLayer(item.hookText, 'headline');
+}
+syncInspectorWithSelectedLayer();
+renderCanvas();
+showToast('စာသားကို Thumbnail ပေါ်သို့ တင်ပေးပြီးပါပြီ!', 'success');
+}
+
+// ==========================================
+// 8. TEXT, STICKERS & OVERLAY LAYER MANAGEMENT
+// ==========================================
+function addNewTextLayer(defaultText, mode = 'headline') {
+const id = 'text_' + Date.now();
+const isBadge = mode === 'badge';
+const newLayer = {
+id,
+type: 'text',
+text: defaultText,
+x: Math.round(canvas.width * 0.12),
+y: Math.round(canvas.height * (isBadge ? 0.25 : 0.45)),
+fontFamily: "'Noto Sans Myanmar', sans-serif",
+fontSize: isBadge ? 38 : 68,
+fillColor: isBadge ? '#ffffff' : '#facc15',
+strokeColor: '#000000',
+strokeWidth: isBadge ? 0 : 14,
+bgBoxEnabled: isBadge,
+bgBoxColor: isBadge ? '#dc2626' : '#000000',
+bgPadding: 18,
+bgRadius: 14,
+shadowBlur: 16,
+rotation: 0
+};
+
+appState.layers.push(newLayer);
+appState.selectedLayerId = id;
+syncInspectorWithSelectedLayer();
+renderCanvas();
+}
+
+function applyTextStylePreset(presetKey) {
+const layer = appState.layers.find(l => l.id === appState.selectedLayerId && l.type === 'text');
+if (!layer) {
+showToast('စာသား Layer တစ်ခုကို အရင်နှိပ်၍ ရွေးချယ်ပေးပါ', 'info');
+return;
+}
+
+if (presetKey === 'yellowPop') {
+layer.fillColor = '#facc15';
+layer.strokeColor = '#000000';
+layer.strokeWidth = 14;
+layer.bgBoxEnabled = false;
+layer.shadowBlur = 20;
+} else if (presetKey === 'redBadge') {
+layer.fillColor = '#ffffff';
+layer.strokeWidth = 0;
+layer.bgBoxEnabled = true;
+layer.bgBoxColor = '#dc2626';
+layer.bgPadding = 18;
+layer.bgRadius = 14;
+} else if (presetKey === 'whiteClean') {
+layer.fillColor = '#ffffff';
+layer.strokeColor = '#0f172a';
+layer.strokeWidth = 12;
+layer.bgBoxEnabled = false;
+layer.shadowBlur = 18;
+} else if (presetKey === 'cyberNeon') {
+layer.fillColor = '#22d3ee';
+layer.strokeColor = '#083344';
+layer.strokeWidth = 10;
+layer.bgBoxEnabled = false;
+layer.shadowBlur = 30;
+} else if (presetKey === 'gold3d') {
+layer.fillColor = '#fbbf24';
+layer.strokeColor = '#451a03';
+layer.strokeWidth = 15;
+layer.bgBoxEnabled = false;
+layer.shadowBlur = 22;
+} else if (presetKey === 'limeBlack') {
+layer.fillColor = '#000000';
+layer.strokeWidth = 0;
+layer.bgBoxEnabled = true;
+layer.bgBoxColor = '#a3e635';
+layer.bgPadding = 16;
+layer.bgRadius = 12;
+}
+
+syncInspectorWithSelectedLayer();
+renderCanvas();
+}
+
+function syncInspectorWithSelectedLayer() {
+const layer = appState.layers.find(l => l.id === appState.selectedLayerId);
+if (!layer) return;
+
+if (layer.type === 'text') {
+document.getElementById('textContentInput').value = layer.text;
+document.getElementById('textFontFamily').value = layer.fontFamily;
+document.getElementById('textFontSize').value = layer.fontSize;
+document.getElementById('val-fontSize').textContent = ${layer.fontSize}px; document.getElementById('textFillColor').value = layer.fillColor; document.getElementById('textStrokeColor').value = layer.strokeColor; document.getElementById('textStrokeWidth').value = layer.strokeWidth; document.getElementById('val-strokeWidth').textContent = layer.strokeWidth; document.getElementById('textBgBoxEnabled').checked = !!layer.bgBoxEnabled; document.getElementById('textBgBoxColor').value = layer.bgBoxColor || '#dc2626'; document.getElementById('textBgPadding').value = layer.bgPadding || 16; document.getElementById('textBgRadius').value = layer.bgRadius || 12; document.getElementById('textShadowBlur').value = layer.shadowBlur || 0; document.getElementById('val-shadowBlur').textContent = layer.shadowBlur || 0; document.getElementById('textRotation').value = layer.rotation || 0; document.getElementById('val-rotation').textContent = ``${layer.rotation || 0}°;
+} else {
+document.getElementById('elementScaleSlider').value = layer.scale || 100;
+document.getElementById('elementRotationSlider').value = layer.rotation || 0;
+}
+}
+
+function updateSelectedTextLayer() {
+const layer = appState.layers.find(l => l.id === appState.selectedLayerId && l.type === 'text');
+if (!layer) return;
+
+layer.text = document.getElementById('textContentInput').value;
+layer.fontFamily = document.getElementById('textFontFamily').value;
+layer.fontSize = Number(document.getElementById('textFontSize').value);
+layer.fillColor = document.getElementById('textFillColor').value;
+layer.strokeColor = document.getElementById('textStrokeColor').value;
+layer.strokeWidth = Number(document.getElementById('textStrokeWidth').value);
+layer.bgBoxEnabled = document.getElementById('textBgBoxEnabled').checked;
+layer.bgBoxColor = document.getElementById('textBgBoxColor').value;
+layer.bgPadding = Number(document.getElementById('textBgPadding').value);
+layer.bgRadius = Number(document.getElementById('textBgRadius').value);
+layer.shadowBlur = Number(document.getElementById('textShadowBlur').value);
+layer.rotation = Number(document.getElementById('textRotation').value);
+
+document.getElementById('val-fontSize').textContent = ${layer.fontSize}px; document.getElementById('val-strokeWidth').textContent = layer.strokeWidth; document.getElementById('val-shadowBlur').textContent = layer.shadowBlur; document.getElementById('val-rotation').textContent = ``${layer.rotation}°;
+
+renderCanvas();
+}
+
+function addEmojiSticker(emojiChar) {
+const id = 'emoji_' + Date.now();
+appState.layers.push({
+id,
+type: 'emoji',
+emoji: emojiChar,
+x: Math.round(canvas.width / 2),
+y: Math.round(canvas.height / 2),
+scale: 120,
+rotation: 0
+});
+appState.selectedLayerId = id;
+syncInspectorWithSelectedLayer();
+renderCanvas();
+}
+
+function addStickerLayer(stickerType) {
+const id = 'sticker_' + Date.now();
+appState.layers.push({
+id,
+type: 'sticker',
+stickerType,
+x: Math.round(canvas.width / 2),
+y: Math.round(canvas.height / 2),
+scale: 120,
+rotation: 0
+});
+appState.selectedLayerId = id;
+syncInspectorWithSelectedLayer();
+renderCanvas();
+}
+
+function handleOverlayImageUpload(event) {
+const file = event.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = function(e) {
+const img = new Image();
+img.onload = function() {
+addImageOverlayToCanvas(img);
+showToast('အပေါ်ထပ်ပုံ (Layer) ထည့်ပြီးပါပြီ!', 'success');
+};
+img.src = e.target.result;
+};
+reader.readAsDataURL(file);
+}
+
+function addImageOverlayToCanvas(img) {
+const maxDim = Math.min(canvas.width, canvas.height) * 0.55;
+const ratio = img.width / img.height;
+let baseW = maxDim;
+let baseH = maxDim / ratio;
+if (baseH > maxDim) {
+baseH = maxDim;
+baseW = maxDim * ratio;
+}
+
+const id = 'imglayer_' + Date.now();
+appState.layers.push({
+id,
+type: 'image',
+img,
+baseWidth: baseW,
+baseHeight: baseH,
+x: Math.round(canvas.width * 0.72),
+y: Math.round(canvas.height * 0.52),
+scale: 100,
+rotation: 0
+});
+appState.selectedLayerId = id;
+syncInspectorWithSelectedLayer();
+renderCanvas();
+}
+
+function updateSelectedElementLayer() {
+const layer = appState.layers.find(l => l.id === appState.selectedLayerId && l.type !== 'text');
+if (!layer) return;
+layer.scale = Number(document.getElementById('elementScaleSlider').value);
+layer.rotation = Number(document.getElementById('elementRotationSlider').value);
+renderCanvas();
+}
+
+function deleteSelectedLayer() {
+if (!appState.selectedLayerId) return;
+appState.layers = appState.layers.filter(l => l.id !== appState.selectedLayerId);
+appState.selectedLayerId = appState.layers.length ? appState.layers[appState.layers.length - 1].id : null;
+syncInspectorWithSelectedLayer();
+renderCanvas();
+}
+
+function duplicateSelectedLayer() {
+const layer = appState.layers.find(l => l.id === appState.selectedLayerId);
+if (!layer) return;
+const copy = Object.assign({}, layer, {
+id: layer.type + '_' + Date.now(),
+x: layer.x + 30,
+y: layer.y + 30
+});
+appState.layers.push(copy);
+appState.selectedLayerId = copy.id;
+syncInspectorWithSelectedLayer();
+renderCanvas();
+}
+
+function moveLayerOrder(direction) {
+const idx = appState.layers.findIndex(l => l.id === appState.selectedLayerId);
+if (idx === -1) return;
+const targetIdx = idx + direction;
+if (targetIdx < 0 || targetIdx >= appState.layers.length) return;
+const temp = appState.layers[idx];
+appState.layers[idx] = appState.layers[targetIdx];
+appState.layers[targetIdx] = temp;
+renderCanvas();
+}
+
+function centerSelectedLayer() {
+const layer = appState.layers.find(l => l.id === appState.selectedLayerId);
+if (!layer) return;
+if (layer.type === 'text' && layer._bounds) {
+layer.x = Math.round((canvas.width - layer._bounds.w) / 2);
+} else {
+layer.x = Math.round(canvas.width / 2);
+}
+renderCanvas();
+}
+
+function renderLayerPills() {
+const container = document.getElementById('layerPillsContainer');
+container.innerHTML = appState.layers.map((l, index) => {
+const isSelected = l.id === appState.selectedLayerId;
+let label = '';
+if (l.type === 'text') label = T: ${l.text.substring(0, 14)}; else if (l.type === 'emoji') label = ``${l.emoji} Emoji;
+else if (l.type === 'sticker') label = Sticker;
+else label = 🖼️ ပုံအလွှာ ${index + 1}`;
+
+return &lt;button onclick="selectLayerById('${l.id}')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium shrink-0 transition flex items-center gap-1.5 {escapeHtml(label)}</span>
+</button>
+`;
+}).join('');
+}
+
+function selectLayerById(id) {
+appState.selectedLayerId = id;
+const layer = appState.layers.find(l => l.id === id);
+syncInspectorWithSelectedLayer();
+if (layer && layer.type === 'text') switchTab('text', false);
+else if (layer) switchTab('elements', false);
+renderCanvas();
+}
+
+// ==========================================
+// 9. EXPORT / DOWNLOAD HIGH-RES THUMBNAIL
+// ==========================================
+function downloadThumbnail(format = 'png') {
+// Render cleanly without selection handles
+renderCanvas(true);
+
+const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+const quality = format === 'jpeg' ? 0.92 : 1.0;
+const dataUrl = canvas.toDataURL(mimeType, quality);
+
+const link = document.createElement('a');
+const ratioSlug = appState.aspectRatio.replace(':', 'x');
+link.download = thumbnail-${ratioSlug}-${Date.now()}.${format === 'jpeg' ? 'jpg' : 'png'}`;
+link.href = dataUrl;
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+
+// Restore interactive selection handles
+renderCanvas(false);
+showToast(Thumbnail ပုံ (${canvas.width}×${canvas.height}) ကို ဒေါင်းလုဒ်ဆွဲပြီးပါပြီ!, 'success');
+}
+
+// ==========================================
+// 10. UI HELPERS & UTILITIES
+// ==========================================
+function switchTab(tabKey, resetScroll = true) {
+document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+const activeContent = document.getElementById(tabContent-${tabKey}`);
+if (activeContent) activeContent.classList.remove('hidden');
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+btn.className = 'tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium text-gray-400 hover:text-white hover:bg-studio-800 transition-all';
+});
+const activeBtn = document.getElementById(tabBtn-${tabKey}`);
+if (activeBtn) {
+activeBtn.className = 'tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all bg-indigo-600 text-white shadow';
+}
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+const radius = Math.min(r, w / 2, h / 2);
+ctx.beginPath();
+ctx.moveTo(x + radius, y);
+ctx.arcTo(x + w, y, x + w, y + h, radius);
+ctx.arcTo(x + w, y + h, x, y + h, radius);
+ctx.arcTo(x, y + h, x, y, radius);
+ctx.arcTo(x, y, x + w, y, radius);
+ctx.closePath();
+}
+
+function hexToRgb(hex) {
+const clean = hex.replace('#', '');
+const num = parseInt(clean, 16);
+return {
+r: (num >> 16) & 255,
+g: (num >> 8) & 255,
+b: num & 255
+};
+}
+
+function escapeHtml(str) {
+return String(str)
+.replace(/&/g, '&')
+.replace(/</g, '<')
+.replace(/>/g, '>')
+.replace(/"/g, '"');
+}
+
+function showToast(message, type = 'info') {
+const container = document.getElementById('toastContainer');
+const toast = document.createElement('div');
+const colors = {
+success: 'bg-emerald-600 border-emerald-400',
+error: 'bg-rose-600 border-rose-400',
+info: 'bg-indigo-600 border-indigo-400'
+};
+const icons = {
+success: 'fa-circle-check',
+error: 'fa-circle-exclamation',
+info: 'fa-circle-info'
+};
+
+toast.className = ``${colors[type] || colors.info} border text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-medium pointer-events-auto transition-all duration-300; toast.innerHTML =<i class="fa-solid {escapeHtml(message)}</span>`;
+container.appendChild(toast);
+
+setTimeout(() => {
+toast.classList.add('opacity-0', 'translate-y-2');
+setTimeout(() => toast.remove(), 300);
+}, 3200);
+}
+</script>
+</body>
+</html>
